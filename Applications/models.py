@@ -15,10 +15,38 @@ class TrafficRule(models.Model):
     trafficRuleId = models.CharField(max_length=64, default='unverified')
     filterType = models.CharField(max_length=64, default='unverified')
     priority = models.CharField(max_length=64, default='unverified')
-    trafficFilter = models.CharField(max_length=64, default='unverified')
+    trafficFilter_UUID = models.CharField(max_length=64, default='unverified')
     action = models.CharField(max_length=64, default='unverified')
-    dstInterface = models.CharField(max_length=64, default='unverified')
+    dstInterface_UUID = models.CharField(max_length=64, default='unverified')
     state = models.CharField(max_length=64, default='unverified')
+
+class TrafficFilter(models.Model):
+    trafficFilter_UUID = models.CharField(max_length=64, default='unverified')
+    srcAddress = models.CharField(max_length=64, default='unverified')
+    dstAddress = models.CharField(max_length=64, default='unverified')
+    srcPort = models.CharField(max_length=64, default='unverified')
+    dstPort = models.CharField(max_length=64, default='unverified')
+    protocol = models.CharField(max_length=64, default='unverified')
+    token = models.CharField(max_length=64, default='unverified')
+    srcTunnelAddress = models.CharField(max_length=64, default='unverified')
+    tgtTunnelAddress = models.CharField(max_length=64, default='unverified')
+    srcTunnelPort = models.CharField(max_length=64, default='unverified')
+    dstTunnelPort = models.CharField(max_length=64, default='unverified')
+    qCI = models.CharField(max_length=64, default='unverified')
+    dSCP = models.CharField(max_length=64, default='unverified')
+    tC = models.CharField(max_length=64, default='unverified')
+
+class DstInterface(models.Model):
+    dstInterface_UUID = models.CharField(max_length=64, default='unverified')
+    interfaceType = models.CharField(max_length=64, default='unverified')
+    # tunnelInfo start
+    tunnelType = models.CharField(max_length=64, default='unverified')
+    tunnelDstAddress = models.CharField(max_length=64, default='unverified')
+    tunnelSrcAddress = models.CharField(max_length=64, default='unverified')
+    # tunnelInfo end
+    srcMacAddress = models.CharField(max_length=64, default='unverified')
+    dstMacAddress = models.CharField(max_length=64, default='unverified')
+    dstIpAddress = models.CharField(max_length=64, default='unverified')
 
 class AppTerminationNotificationSubscription(models.Model):
     appInstanceId = models.CharField(max_length=64, default='unverified')

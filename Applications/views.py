@@ -1,8 +1,10 @@
 from django.shortcuts import render
 from django.http import JsonResponse
-from .utils.putPayloadParser import put_payload_parser
 from Applications.models import *
 from Registrations.models import *
+import json
+import uuid
+import ast
 
 # Create your views here.
 
@@ -17,19 +19,58 @@ def individualMecAppSupportSubscription(request, appInstanceId, subscriptionId):
     pass
 
 def allMecTrafficRule(request, appInstanceId):
-    result = {"TrafficRulesArray":[]}
+    result = []
     status = 0
     if request.method == "GET":
         if TrafficRule.objects.filter(appInstanceId=appInstanceId).first():
             data = TrafficRule.objects.filter(appInstanceId=appInstanceId)
+
             for i in range(len(data)):
-                result["TrafficRulesArray"].append({
+                trafficFilter_UUID=data[i].trafficFilter_UUID
+                dstInterface_UUID=data[i].dstInterface_UUID
+                trafficFilter = TrafficFilter.objects.filter(trafficFilter_UUID=trafficFilter_UUID)
+                dstInterface = DstInterface.objects.filter(dstInterface_UUID=dstInterface_UUID)
+
+                trafficFilter_list = []
+                dstInterface_list = []
+
+                for tf in trafficFilter:
+                    trafficFilter_list.append({
+                        "srcAddress": ast.literal_eval(tf.srcAddress),
+                        "dstAddress": ast.literal_eval(tf.dstAddress),
+                        "srcPort": ast.literal_eval(tf.srcPort),
+                        "dstPort": ast.literal_eval(tf.dstPort),
+                        "protocol": ast.literal_eval(tf.protocol),
+                        "token": ast.literal_eval(tf.token),
+                        "srcTunnelAddress": ast.literal_eval(tf.srcTunnelAddress),
+                        "tgtTunnelAddress": ast.literal_eval(tf.tgtTunnelAddress),
+                        "srcTunnelPort": ast.literal_eval(tf.srcTunnelPort),
+                        "dstTunnelPort": ast.literal_eval(tf.dstTunnelPort),
+                        "qCI": tf.qCI,
+                        "dSCP": tf.dSCP,
+                        "tC": tf.tC
+                    })
+
+                for dif in dstInterface:
+                    dstInterface_list.append({
+                        "interfaceType": dif.interfaceType,
+                        "tunnelInfo": {
+                            "tunnelType": dif.tunnelType,
+                            "tunnelDstAddress": dif.tunnelDstAddress,
+                            "tunnelSrcAddress": dif.tunnelSrcAddress
+                        },
+                        "srcMacAddress": dif.srcMacAddress,
+                        "dstMacAddress": dif.dstMacAddress,
+                        "dstIpAddress": dif.dstIpAddress
+                    })
+
+                result.append({
                     "trafficRuleId": data[i].trafficRuleId,
                     "filterType": data[i].filterType,
                     "priority": data[i].priority,
-                    "trafficFilter": data[i].trafficFilter,
+                    "trafficFilter": trafficFilter_list,
                     "action": data[i].action,
-                    "dstInterface": data[i].dstInterface,
+                    "dstInterface": dstInterface_list,
                     "state": data[i].state,
                 })
             status = 200
@@ -44,22 +85,60 @@ def allMecTrafficRule(request, appInstanceId):
             "status": 1,
             "message": "method error"
         }
-    return JsonResponse(result, status=404)
+    return JsonResponse(result, status=404, safe=False)
 
 def individualmecTrafficRule(request, appInstanceId, trafficRuleId):
     result = {}
     status = 0
     if request.method == "GET":
-        if TrafficRule.objects.filter(trafficRuleId=trafficRuleId).first():
-            data = TrafficRule.objects.get(trafficRuleId=trafficRuleId)
+        if TrafficRule.objects.filter(trafficRuleId=trafficRuleId, appInstanceId=appInstanceId).first():
+            data = TrafficRule.objects.get(trafficRuleId=trafficRuleId, appInstanceId=appInstanceId)
+            
+            trafficFilter_UUID=data.trafficFilter_UUID
+            dstInterface_UUID=data.dstInterface_UUID
+            trafficFilter = TrafficFilter.objects.filter(trafficFilter_UUID=trafficFilter_UUID)
+            dstInterface = DstInterface.objects.filter(dstInterface_UUID=dstInterface_UUID)
+
+            trafficFilter_list = []
+            dstInterface_list = []
+
+            for tf in trafficFilter:
+                trafficFilter_list.append({
+                    "srcAddress": ast.literal_eval(tf.srcAddress),
+                    "dstAddress": ast.literal_eval(tf.dstAddress),
+                    "srcPort": ast.literal_eval(tf.srcPort),
+                    "dstPort": ast.literal_eval(tf.dstPort),
+                    "protocol": ast.literal_eval(tf.protocol),
+                    "token": ast.literal_eval(tf.token),
+                    "srcTunnelAddress": ast.literal_eval(tf.srcTunnelAddress),
+                    "tgtTunnelAddress": ast.literal_eval(tf.tgtTunnelAddress),
+                    "srcTunnelPort": ast.literal_eval(tf.srcTunnelPort),
+                    "dstTunnelPort": ast.literal_eval(tf.dstTunnelPort),
+                    "qCI": tf.qCI,
+                    "dSCP": tf.dSCP,
+                    "tC": tf.tC
+                })
+
+            for dif in dstInterface:
+                dstInterface_list.append({
+                    "interfaceType": dif.interfaceType,
+                    "tunnelInfo": {
+                        "tunnelType": dif.tunnelType,
+                        "tunnelDstAddress": dif.tunnelDstAddress,
+                        "tunnelSrcAddress": dif.tunnelSrcAddress
+                    },
+                    "srcMacAddress": dif.srcMacAddress,
+                    "dstMacAddress": dif.dstMacAddress,
+                    "dstIpAddress": dif.dstIpAddress
+                })
+
             result = {
-                "appInstanceId": data.appInstanceId,
                 "trafficRuleId": data.trafficRuleId,
                 "filterType": data.filterType,
                 "priority": data.priority,
-                "trafficFilter": data.trafficFilter,
+                "trafficFilter": trafficFilter_list,
                 "action": data.action,
-                "dstInterface": data.dstInterface,
+                "dstInterface": dstInterface_list,
                 "state": data.state,
             }
             status = 200
@@ -70,49 +149,193 @@ def individualmecTrafficRule(request, appInstanceId, trafficRuleId):
             }
             status = 403
     elif request.method == "PUT":
-        payload = put_payload_parser(request)
-        if TrafficRule.objects.filter(trafficRuleId=trafficRuleId).first():
-            TrafficRule.objects.filter(trafficRuleId=trafficRuleId).update(
-                trafficRuleId=payload["trafficRuleId"],
+        payload = json.loads(request.body.decode("utf-8"))
+        if TrafficRule.objects.filter(trafficRuleId=trafficRuleId, appInstanceId=appInstanceId).first():
+            TrafficRule.objects.filter(trafficRuleId=trafficRuleId, appInstanceId=appInstanceId).update(
                 filterType=payload["filterType"],
                 priority=payload["priority"],
-                trafficFilter=payload["trafficFilter"],
                 action=payload["action"],
-                dstInterface=payload["dstInterface"],
                 state=payload["state"],
             )
-            data = TrafficRule.objects.get(trafficRuleId=trafficRuleId)
+
+            data = TrafficRule.objects.get(trafficRuleId=trafficRuleId, appInstanceId=appInstanceId)
+            trafficFilter_UUID=data.trafficFilter_UUID
+            dstInterface_UUID=data.dstInterface_UUID
+
+            TrafficFilter.objects.filter(trafficFilter_UUID=trafficFilter_UUID).delete()
+            for trafficFilter in payload["trafficFilter"]:
+                TrafficFilter.objects.create(
+                    trafficFilter_UUID=trafficFilter_UUID,
+                    srcAddress=str(trafficFilter["srcAddress"]),
+                    dstAddress=str(trafficFilter["dstAddress"]),
+                    srcPort=str(trafficFilter["srcPort"]),
+                    dstPort=str(trafficFilter["dstPort"]),
+                    protocol=str(trafficFilter["protocol"]),
+                    token=str(trafficFilter["token"]),
+                    srcTunnelAddress=str(trafficFilter["srcTunnelAddress"]),
+                    tgtTunnelAddress=str(trafficFilter["tgtTunnelAddress"]),
+                    srcTunnelPort=str(trafficFilter["srcTunnelPort"]),
+                    dstTunnelPort=str(trafficFilter["dstTunnelPort"]),
+                    qCI=trafficFilter["srcAddress"],
+                    dSCP=trafficFilter["dSCP"],
+                    tC=trafficFilter["tC"]
+                )
+            
+            DstInterface.objects.filter(dstInterface_UUID=dstInterface_UUID).delete()
+            for dstInterface in payload["dstInterface"]:
+                DstInterface.objects.create(
+                    dstInterface_UUID=dstInterface_UUID,
+                    interfaceType=dstInterface["interfaceType"],
+                    tunnelType=dstInterface["tunnelInfo"]["tunnelType"],
+                    tunnelDstAddress=dstInterface["tunnelInfo"]["tunnelDstAddress"],
+                    tunnelSrcAddress=dstInterface["tunnelInfo"]["tunnelSrcAddress"],
+                    srcMacAddress=dstInterface["srcMacAddress"],
+                    dstMacAddress=dstInterface["dstMacAddress"],
+                    dstIpAddress=dstInterface["dstIpAddress"]
+                )
+
+            data = TrafficRule.objects.get(trafficRuleId=trafficRuleId, appInstanceId=appInstanceId)
+            
+            trafficFilter_UUID=data.trafficFilter_UUID
+            dstInterface_UUID=data.dstInterface_UUID
+            trafficFilter = TrafficFilter.objects.filter(trafficFilter_UUID=trafficFilter_UUID)
+            dstInterface = DstInterface.objects.filter(dstInterface_UUID=dstInterface_UUID)
+
+            trafficFilter_list = []
+            dstInterface_list = []
+
+            for tf in trafficFilter:
+                trafficFilter_list.append({
+                    "srcAddress": ast.literal_eval(tf.srcAddress),
+                    "dstAddress": ast.literal_eval(tf.dstAddress),
+                    "srcPort": ast.literal_eval(tf.srcPort),
+                    "dstPort": ast.literal_eval(tf.dstPort),
+                    "protocol": ast.literal_eval(tf.protocol),
+                    "token": ast.literal_eval(tf.token),
+                    "srcTunnelAddress": ast.literal_eval(tf.srcTunnelAddress),
+                    "tgtTunnelAddress": ast.literal_eval(tf.tgtTunnelAddress),
+                    "srcTunnelPort": ast.literal_eval(tf.srcTunnelPort),
+                    "dstTunnelPort": ast.literal_eval(tf.dstTunnelPort),
+                    "qCI": tf.qCI,
+                    "dSCP": tf.dSCP,
+                    "tC": tf.tC
+                })
+
+            for dif in dstInterface:
+                dstInterface_list.append({
+                    "interfaceType": dif.interfaceType,
+                    "tunnelInfo": {
+                        "tunnelType": dif.tunnelType,
+                        "tunnelDstAddress": dif.tunnelDstAddress,
+                        "tunnelSrcAddress": dif.tunnelSrcAddress
+                    },
+                    "srcMacAddress": dif.srcMacAddress,
+                    "dstMacAddress": dif.dstMacAddress,
+                    "dstIpAddress": dif.dstIpAddress
+                })
+
             result = {
-                "appInstanceId": data.appInstanceId,
                 "trafficRuleId": data.trafficRuleId,
                 "filterType": data.filterType,
                 "priority": data.priority,
-                "trafficFilter": data.trafficFilter,
+                "trafficFilter": trafficFilter_list,
                 "action": data.action,
-                "dstInterface": data.dstInterface,
+                "dstInterface": dstInterface_list,
                 "state": data.state,
             }
             status = 200
         else:
+            trafficFilter_UUID=str(uuid.uuid4())
+            dstInterface_UUID=str(uuid.uuid4())
+
             TrafficRule.objects.create(
                 appInstanceId=appInstanceId,
                 trafficRuleId=payload["trafficRuleId"],
                 filterType=payload["filterType"],
                 priority=payload["priority"],
-                trafficFilter=payload["trafficFilter"],
+                trafficFilter_UUID=trafficFilter_UUID,
                 action=payload["action"],
-                dstInterface=payload["dstInterface"],
+                dstInterface_UUID=dstInterface_UUID,
                 state=payload["state"],
             )
-            data = TrafficRule.objects.get(trafficRuleId=trafficRuleId)
+
+            for trafficFilter in payload["trafficFilter"]:
+                TrafficFilter.objects.create(
+                    trafficFilter_UUID=trafficFilter_UUID,
+                    srcAddress=str(trafficFilter["srcAddress"]),
+                    dstAddress=str(trafficFilter["dstAddress"]),
+                    srcPort=str(trafficFilter["srcPort"]),
+                    dstPort=str(trafficFilter["dstPort"]),
+                    protocol=str(trafficFilter["protocol"]),
+                    token=str(trafficFilter["token"]),
+                    srcTunnelAddress=str(trafficFilter["srcTunnelAddress"]),
+                    tgtTunnelAddress=str(trafficFilter["tgtTunnelAddress"]),
+                    srcTunnelPort=str(trafficFilter["srcTunnelPort"]),
+                    dstTunnelPort=str(trafficFilter["dstTunnelPort"]),
+                    qCI=trafficFilter["srcAddress"],
+                    dSCP=trafficFilter["dSCP"],
+                    tC=trafficFilter["tC"]
+                )
+
+            for dstInterface in payload["dstInterface"]:
+                DstInterface.objects.create(
+                    dstInterface_UUID=dstInterface_UUID,
+                    interfaceType=dstInterface["interfaceType"],
+                    tunnelType=dstInterface["tunnelInfo"]["tunnelType"],
+                    tunnelDstAddress=dstInterface["tunnelInfo"]["tunnelDstAddress"],
+                    tunnelSrcAddress=dstInterface["tunnelInfo"]["tunnelSrcAddress"],
+                    srcMacAddress=dstInterface["srcMacAddress"],
+                    dstMacAddress=dstInterface["dstMacAddress"],
+                    dstIpAddress=dstInterface["dstIpAddress"]
+                )
+
+            data = TrafficRule.objects.get(trafficRuleId=trafficRuleId, appInstanceId=appInstanceId)
+            
+            trafficFilter_UUID=data.trafficFilter_UUID
+            dstInterface_UUID=data.dstInterface_UUID
+            trafficFilter = TrafficFilter.objects.filter(trafficFilter_UUID=trafficFilter_UUID)
+            dstInterface = DstInterface.objects.filter(dstInterface_UUID=dstInterface_UUID)
+
+            trafficFilter_list = []
+            dstInterface_list = []
+
+            for tf in trafficFilter:
+                trafficFilter_list.append({
+                    "srcAddress": ast.literal_eval(tf.srcAddress),
+                    "dstAddress": ast.literal_eval(tf.dstAddress),
+                    "srcPort": ast.literal_eval(tf.srcPort),
+                    "dstPort": ast.literal_eval(tf.dstPort),
+                    "protocol": ast.literal_eval(tf.protocol),
+                    "token": ast.literal_eval(tf.token),
+                    "srcTunnelAddress": ast.literal_eval(tf.srcTunnelAddress),
+                    "tgtTunnelAddress": ast.literal_eval(tf.tgtTunnelAddress),
+                    "srcTunnelPort": ast.literal_eval(tf.srcTunnelPort),
+                    "dstTunnelPort": ast.literal_eval(tf.dstTunnelPort),
+                    "qCI": tf.qCI,
+                    "dSCP": tf.dSCP,
+                    "tC": tf.tC
+                })
+
+            for dif in dstInterface:
+                dstInterface_list.append({
+                    "interfaceType": dif.interfaceType,
+                    "tunnelInfo": {
+                        "tunnelType": dif.tunnelType,
+                        "tunnelDstAddress": dif.tunnelDstAddress,
+                        "tunnelSrcAddress": dif.tunnelSrcAddress
+                    },
+                    "srcMacAddress": dif.srcMacAddress,
+                    "dstMacAddress": dif.dstMacAddress,
+                    "dstIpAddress": dif.dstIpAddress
+                })
+
             result = {
-                "appInstanceId": data.appInstanceId,
                 "trafficRuleId": data.trafficRuleId,
                 "filterType": data.filterType,
                 "priority": data.priority,
-                "trafficFilter": data.trafficFilter,
+                "trafficFilter": trafficFilter_list,
                 "action": data.action,
-                "dstInterface": data.dstInterface,
+                "dstInterface": dstInterface_list,
                 "state": data.state,
             }
             status = 200
@@ -125,13 +348,13 @@ def individualmecTrafficRule(request, appInstanceId, trafficRuleId):
     return JsonResponse(result, status=status)
     
 def allMecDnsRule(request, appInstanceId):
-    result = {"TrafficRulesArray":[]}
+    result = []
     status = 0
     if request.method == "GET":
         if DnsRule.objects.filter(appInstanceId=appInstanceId).first():
             data = DnsRule.objects.filter(appInstanceId=appInstanceId)
             for i in range(len(data)):
-                result["TrafficRulesArray"].append({
+                result.append({
                     "dnsRuleId":data[i].dnsRuleId,
                     "domainName": data[i].domainName,
                     "ipAddressType": data[i].ipAddressType,
@@ -151,7 +374,7 @@ def allMecDnsRule(request, appInstanceId):
             "status": 1,
             "message": "method error"
         }
-    return JsonResponse(result, status=404)
+    return JsonResponse(result, status=404, safe=False)
 
 def individualMecDnsRule(request, appInstanceId, dnsRuleId):
     result = {}
@@ -160,7 +383,6 @@ def individualMecDnsRule(request, appInstanceId, dnsRuleId):
         if DnsRule.objects.filter(dnsRuleId=dnsRuleId).first():
             data = DnsRule.objects.get(dnsRuleId=dnsRuleId)
             result = {
-                "appInstanceId": data.appInstanceId,
                 "dnsRuleId": data.dnsRuleId,
                 "domainName": data.domainName,
                 "ipAddressType": data.ipAddressType,
@@ -176,7 +398,7 @@ def individualMecDnsRule(request, appInstanceId, dnsRuleId):
             }
             status = 403
     elif request.method == "PUT":
-        payload = put_payload_parser(request)
+        payload = json.loads(request.body.decode("utf-8"))
         if DnsRule.objects.filter(dnsRuleId=dnsRuleId).first():
             DnsRule.objects.filter(dnsRuleId=dnsRuleId).update(
                 dnsRuleId=payload["dnsRuleId"],
@@ -188,7 +410,6 @@ def individualMecDnsRule(request, appInstanceId, dnsRuleId):
             )
             data = DnsRule.objects.get(dnsRuleId=dnsRuleId)
             result = {
-                "appInstanceId": data.appInstanceId,
                 "dnsRuleId": data.dnsRuleId,
                 "domainName": data.domainName,
                 "ipAddressType": data.ipAddressType,
@@ -209,7 +430,6 @@ def individualMecDnsRule(request, appInstanceId, dnsRuleId):
             )
             data = DnsRule.objects.get(dnsRuleId=dnsRuleId)
             result = {
-                "appInstanceId": data.appInstanceId,
                 "dnsRuleId": data.dnsRuleId,
                 "domainName": data.domainName,
                 "ipAddressType": data.ipAddressType,
