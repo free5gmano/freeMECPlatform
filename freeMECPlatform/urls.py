@@ -19,6 +19,7 @@ from django.urls import path, include
 from Timing.views import *
 from Applications.views import *
 from Registrations.views import *
+from MECServiceManagement.views import *
 
 URI = {
     "allMecAppSupportSubscription": "mec_app_support/v2/applications/<str:appInstanceId>/subscriptions",
@@ -31,22 +32,32 @@ URI = {
     "confirmReadyTask": "mec_app_support/v2/applications/<str:appInstanceId>/confirm_ready",
     "mecAppInstanceRegistration": "mec_app_support/v2/registrations",
     "mecTimingCaps": "mec_app_support/v2/timing/timing_caps",
-    "mecCurrentTime": "mec_app_support/v2/timing/current_time"
+    "mecCurrentTime": "mec_app_support/v2/timing/current_time",
+    # "serviceAvailabilityQuery": "mec_service_mgmt/v1/applications/<str:appInstanceId>/services",
+    "serviceRegistration": "mec_service_mgmt/v1/applications/<str:appInstanceId>/services",
+    "individualServiceAvailabilityQuery": "mec_service_mgmt/v1/applications/<str:appInstanceId>/services/<str:serviceId>",
+    # "individualServiceUpdates": "mec_service_mgmt/v1/applications/<str:appInstanceId>/services/<str:serviceId>",
+    # "individualServiceDelete": "mec_service_mgmt/v1/applications/<str:appInstanceId>/services/<str:serviceId>"
 }
 
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path(URI["allMecAppSupportSubscription"], allMecAppSupportSubscription),
-    path(URI["individualMecAppSupportSubscription"], individualMecAppSupportSubscription),
-    path(URI["allMecTrafficRule"], allMecTrafficRule),
-    path(URI["individualmecTrafficRule"], individualmecTrafficRule),
-    path(URI["allMecDnsRule"], allMecDnsRule),
-    path(URI["individualMecDnsRule"], individualMecDnsRule),
-    path(URI["confirmTerminationTask"], confirmTerminationTask),
-    path(URI["confirmReadyTask"], confirmReadyTask),
+    path(URI["allMecAppSupportSubscription"], AllMecAppSupportSubscription.as_view()),
+    path(URI["individualMecAppSupportSubscription"], IndividualMecAppSupportSubscription.as_view()),
+    path(URI["allMecTrafficRule"], AllMecTrafficRule.as_view()),
+    path(URI["individualmecTrafficRule"], IndividualMecTrafficRule.as_view()),
+    path(URI["allMecDnsRule"], AllMecDnsRule.as_view()),
+    path(URI["individualMecDnsRule"], IndividualMecDnsRule.as_view()),
+    path(URI["confirmTerminationTask"], ConfirmTerminationTask.as_view()),
+    path(URI["confirmReadyTask"], ConfirmReadyTask.as_view()),
     path(URI["mecAppInstanceRegistration"], mecAppInstanceRegistration),
     path(URI["mecTimingCaps"], mecTimingCaps),
     path(URI["mecCurrentTime"], mecCurrentTime),
+    # path(URI["serviceAvailabilityQuery"], mecCurrentTime),
+    path(URI["serviceRegistration"], service_registration),
+    path(URI["individualServiceAvailabilityQuery"], service_query),
+    # path(URI["individualServiceUpdates"], mecCurrentTime),
+    # path(URI["individualServiceDelete"], mecCurrentTime),
     path('o/', include('oauth2_provider.urls', namespace='oauth2_provider')),
 ]

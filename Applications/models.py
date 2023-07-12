@@ -54,3 +54,8 @@ class AppTerminationNotificationSubscription(models.Model):
     callbackReference = models.CharField(max_length=64, default='unverified')
     _links = models.CharField(max_length=64, default='unverified')
     self_referring_URI = models.CharField(max_length=64, default='unverified')
+
+class Subscription(models.Model):
+    appInstanceId = models.CharField(max_length=64, default='unverified')
+    subscriptionType = models.CharField(max_length=64, default='unverified')
+    href = models.CharField(max_length=64, default='unverified')

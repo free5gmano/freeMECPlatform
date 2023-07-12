@@ -13,6 +13,11 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 from pathlib import Path
 
 MEC_PLATFORM_HOST = "10.0.0.218"
+MEC_PLATFORM_PORT = "8888"
+
+CLIENT_ID = "0ulJa3GBEnsNAYUPwAxURrNyEi55Vr30VRytmavi"
+SECRET = "w4RzeaDLtcoENlr5MMi7r6tTEU6M2EqTlGLvPzRLnS6y0O0aJBRi6Q1R4ji33LaLqte2M4lhFgtTBgfwVGUWeJtrmtxB31QAaCons2I49PKBng24Cqw1KSOGmEP3NaWO"
+
 LOGIN_URL='/admin/login/'
 
 
@@ -31,10 +36,11 @@ DEBUG = True
 
 ALLOWED_HOSTS = [MEC_PLATFORM_HOST]
 
-
+APPEND_SLASH=False
 # Application definition
 
 INSTALLED_APPS = [
+    'MECServiceManagement',
     'Timing',
     'Applications',
     'Registrations',

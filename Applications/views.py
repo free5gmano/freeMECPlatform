@@ -1,27 +1,59 @@
 from django.shortcuts import render
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from Applications.models import *
 from Registrations.models import *
+from oauth2_provider.views.generic import ProtectedResourceView
 import json
 import uuid
 import ast
 
-# Create your views here.
+class AllMecDnsRule(ProtectedResourceView):
+    def get(self, request, appInstanceId):
+        result = []
+        status = 0
+        if DnsRule.objects.filter(appInstanceId=appInstanceId).first():
+            data = DnsRule.objects.filter(appInstanceId=appInstanceId)
+            for i in range(len(data)):
+                result.append({
+                    "dnsRuleId":data[i].dnsRuleId,
+                    "domainName": data[i].domainName,
+                    "ipAddressType": data[i].ipAddressType,
+                    "ipAddress": data[i].ipAddress,
+                    "ttl": data[i].ttl,
+                    "state": data[i].state,
+                })
+            status = 200
+        else:
+            result = {
+                "status": 0,
+                "message": "Dns rule does not exist."
+            }
+            status = 403
+        return JsonResponse(result, status=status, safe=False)
 
-def allMecAppSupportSubscription(request, appInstanceId):
-    if request.method == "GET":
-        pass
-    elif request.method == "POST":
+class AllMecAppSupportSubscription(ProtectedResourceView):
+    def get(self, request, appInstanceId):
+        result = {}
+        status = 0
+        return JsonResponse(result, status=status, safe=False)
+
+    def post(self, request, appInstanceId):
+        result = {}
+        status = 0
+        payload = json.loads(request.body.decode("utf-8"))
+        if Subscription.objects.filter(appInstanceId=appInstanceId).first():
+            pass
         result = {"SubscriptionLinkList": appInstanceId}
-        return JsonResponse(result, status=201)
+        return JsonResponse(result, status=status, safe=False)
 
-def individualMecAppSupportSubscription(request, appInstanceId, subscriptionId):
-    pass
+class IndividualMecAppSupportSubscription(ProtectedResourceView):
+    def get(self, request, appInstanceId, subscriptionId):
+        pass
 
-def allMecTrafficRule(request, appInstanceId):
-    result = []
-    status = 0
-    if request.method == "GET":
+class AllMecTrafficRule(ProtectedResourceView):
+    def get(self, request, appInstanceId):
+        result = []
+        status = 0
         if TrafficRule.objects.filter(appInstanceId=appInstanceId).first():
             data = TrafficRule.objects.filter(appInstanceId=appInstanceId)
 
@@ -80,17 +112,12 @@ def allMecTrafficRule(request, appInstanceId):
                 "message": "Dns rule does not exist."
             }
             status = 403
-    else:
-        result = {
-            "status": 1,
-            "message": "method error"
-        }
-    return JsonResponse(result, status=404, safe=False)
+        return JsonResponse(result, status=status, safe=False)
 
-def individualmecTrafficRule(request, appInstanceId, trafficRuleId):
-    result = {}
-    status = 0
-    if request.method == "GET":
+class IndividualMecTrafficRule(ProtectedResourceView):
+    def get(self, request, appInstanceId, trafficRuleId):
+        result = {}
+        status = 0
         if TrafficRule.objects.filter(trafficRuleId=trafficRuleId, appInstanceId=appInstanceId).first():
             data = TrafficRule.objects.get(trafficRuleId=trafficRuleId, appInstanceId=appInstanceId)
             
@@ -148,7 +175,9 @@ def individualmecTrafficRule(request, appInstanceId, trafficRuleId):
                 "message": "Traffic rule does not exist."
             }
             status = 403
-    elif request.method == "PUT":
+        return JsonResponse(result, status=status)
+
+    def put(self, request, appInstanceId, trafficRuleId):
         payload = json.loads(request.body.decode("utf-8"))
         if TrafficRule.objects.filter(trafficRuleId=trafficRuleId, appInstanceId=appInstanceId).first():
             TrafficRule.objects.filter(trafficRuleId=trafficRuleId, appInstanceId=appInstanceId).update(
@@ -339,47 +368,12 @@ def individualmecTrafficRule(request, appInstanceId, trafficRuleId):
                 "state": data.state,
             }
             status = 200
-    else:
-        result = {
-            "status": 1,
-            "message": "method error"
-        }
-        status = 404
-    return JsonResponse(result, status=status)
-    
-def allMecDnsRule(request, appInstanceId):
-    result = []
-    status = 0
-    if request.method == "GET":
-        if DnsRule.objects.filter(appInstanceId=appInstanceId).first():
-            data = DnsRule.objects.filter(appInstanceId=appInstanceId)
-            for i in range(len(data)):
-                result.append({
-                    "dnsRuleId":data[i].dnsRuleId,
-                    "domainName": data[i].domainName,
-                    "ipAddressType": data[i].ipAddressType,
-                    "ipAddress": data[i].ipAddress,
-                    "ttl": data[i].ttl,
-                    "state": data[i].state,
-                })
-            status = 200
-        else:
-            result = {
-                "status": 0,
-                "message": "Dns rule does not exist."
-            }
-            status = 403
-    else:
-        result = {
-            "status": 1,
-            "message": "method error"
-        }
-    return JsonResponse(result, status=404, safe=False)
+        return JsonResponse(result, status=status)
 
-def individualMecDnsRule(request, appInstanceId, dnsRuleId):
-    result = {}
-    status = 0
-    if request.method == "GET":
+class IndividualMecDnsRule(ProtectedResourceView):
+    def get(self, request, appInstanceId, dnsRuleId):
+        result = {}
+        status = 0
         if DnsRule.objects.filter(dnsRuleId=dnsRuleId).first():
             data = DnsRule.objects.get(dnsRuleId=dnsRuleId)
             result = {
@@ -397,7 +391,9 @@ def individualMecDnsRule(request, appInstanceId, dnsRuleId):
                 "message": "Dns rule does not exist."
             }
             status = 403
-    elif request.method == "PUT":
+        return JsonResponse(result, status=status)
+
+    def put(self, request, appInstanceId, dnsRuleId):
         payload = json.loads(request.body.decode("utf-8"))
         if DnsRule.objects.filter(dnsRuleId=dnsRuleId).first():
             DnsRule.objects.filter(dnsRuleId=dnsRuleId).update(
@@ -438,16 +434,16 @@ def individualMecDnsRule(request, appInstanceId, dnsRuleId):
                 "state": data.state,
             }
             status = 200
-    else:
-        result = {
-            "status": 1,
-            "message": "method error"
-        }
-        status = 404
-    return JsonResponse(result, status=status)
+        return JsonResponse(result, status=status)
 
-def confirmTerminationTask(request, appInstanceId):
-    pass
+class ConfirmTerminationTask(ProtectedResourceView):
+    def get(self, request, appInstanceId):
+        result = {}
+        status = 0
+        return JsonResponse(result, status=status)
 
-def confirmReadyTask(request, appInstanceId):
-    pass
+class ConfirmReadyTask(ProtectedResourceView):
+    def get(self, request, appInstanceId):
+        result = {}
+        status = 0
+        return JsonResponse(result, status=status)
